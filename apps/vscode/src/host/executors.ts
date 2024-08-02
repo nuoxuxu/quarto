@@ -25,7 +25,7 @@ import { JupyterKernelspec } from "core";
 
 export interface CellExecutor {
   execute: (blocks: string[], editorUri?: Uri) => Promise<void>;
-  executeSelection?: () => Promise<void>;
+  executeSelection?: (blocks: string[]) => Promise<void>;
 }
 
 export function executableLanguages() {
@@ -52,10 +52,10 @@ interface VSCodeCellExecutor extends CellExecutor {
   requiredExtension?: string[];
   requiredVersion?: string;
   execute: (blocks: string[], editorUri?: Uri) => Promise<void>;
-  executeSelection?: () => Promise<void>;
+  executeSelection?: (blocks: string[]) => Promise<void>;
 }
 
-const jupyterCellExecutor = (language: string) : VSCodeCellExecutor => ({
+const jupyterCellExecutor = (language: string): VSCodeCellExecutor => ({
   language,
   requiredExtension: ["ms-toolsai.jupyter"],
   requiredExtensionName: "Jupyter",
@@ -87,10 +87,14 @@ const rCellExecutor: VSCodeCellExecutor = {
   requiredExtensionName: "R",
   requiredVersion: "2.4.0",
   execute: async (blocks: string[]) => {
-    await commands.executeCommand("r.runSelection", blocks.join("\n").trim());
+    const code = blocks.join("\n").trim();
+    const pythonCode = rWithRyp(code);
+    await commands.executeCommand("jupyter.execSelectionInteractive", pythonCode);
   },
-  executeSelection: async () => {
-    await commands.executeCommand("r.runSelection");
+  executeSelection: async (blocks: string[]) => {
+    const code = blocks.join("\n").trim();
+    const pythonCode = rWithRyp(code);
+    await commands.executeCommand("jupyter.execSelectionInteractive", pythonCode);
   },
 };
 
@@ -179,16 +183,16 @@ export function isDenoDocument(
   if (jupyterOption) {
     if (jupyterOption === "deno") {
       return true;
-    } else if (typeof(jupyterOption) === "object") {
-      const kernelspec = (jupyterOption as Record<string,unknown>)["kernelspec"];
-      if (typeof(kernelspec) === "object") {
+    } else if (typeof (jupyterOption) === "object") {
+      const kernelspec = (jupyterOption as Record<string, unknown>)["kernelspec"];
+      if (typeof (kernelspec) === "object") {
         return (kernelspec as JupyterKernelspec).name === "deno";
       }
     } else {
       return false;
     }
   }
- 
+
   // another explicit declaration of engine that isn't jupyter
   if (engineOption && engineOption !== "jupyter") {
     return false;
@@ -227,6 +231,10 @@ export function isKnitrDocument(
   // if there are R language blocks then this is knitr
   const tokens = engine.parse(document);
   return !!tokens.find(isExecutableLanguageBlockOf("r"));
+}
+
+export function rWithRyp(code: string) {
+  return `r("""${code}""")`
 }
 
 export function pythonWithReticulate(code: string) {

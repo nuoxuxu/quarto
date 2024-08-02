@@ -19,13 +19,13 @@
 
 import { TextDocument } from "vscode";
 
-import { 
-  codeForExecutableLanguageBlock, 
-  isExecutableLanguageBlock, 
-  languageNameFromBlock, 
-  Token, 
-  TokenCodeBlock, 
-  TokenMath 
+import {
+  codeForExecutableLanguageBlock,
+  isExecutableLanguageBlock,
+  languageNameFromBlock,
+  Token,
+  TokenCodeBlock,
+  TokenMath
 } from "quarto-core";
 
 import { lines } from "core";
@@ -40,7 +40,7 @@ export function hasExecutor(_host: ExtensionHost, language: string) {
   return executableLanguages().includes(language);
 }
 
-export function blockHasExecutor(host: ExtensionHost, token?: Token) : token is TokenMath | TokenCodeBlock {
+export function blockHasExecutor(host: ExtensionHost, token?: Token): token is TokenMath | TokenCodeBlock {
   if (token) {
     const language = languageNameFromBlock(token);
     return isExecutableLanguageBlock(token) && hasExecutor(host, language);
@@ -49,7 +49,7 @@ export function blockHasExecutor(host: ExtensionHost, token?: Token) : token is 
   }
 }
 
-export function blockIsExecutable(host: ExtensionHost, token?: Token) : token is TokenMath | TokenCodeBlock {
+export function blockIsExecutable(host: ExtensionHost, token?: Token): token is TokenMath | TokenCodeBlock {
   if (token) {
     return (
       blockHasExecutor(host, token) && cellOptionsForToken(token)[kExecuteEval] !== false
@@ -73,13 +73,13 @@ export function codeWithoutOptionsFromBlock(token: TokenMath | TokenCodeBlock) {
       } else {
         return "";
       }
-  } else {
-    return codeForExecutableLanguageBlock(token);
-  }
+    } else {
+      return codeForExecutableLanguageBlock(token);
+    }
   } else {
     return "";
   }
-  
+
 }
 
 export async function executeInteractive(
@@ -93,9 +93,9 @@ export async function executeInteractive(
 // attempt language aware execution of current selection (returns false
 // if the executor doesn't support this, in which case generic
 // executeInteractive will be called)
-export async function executeSelectionInteractive(executor: CellExecutor) {
+export async function executeSelectionInteractive(executor: CellExecutor, blocks: string[]) {
   if (executor?.executeSelection) {
-    await executor.executeSelection();
+    await executor.executeSelection(blocks);
     return true;
   } else {
     return false;
